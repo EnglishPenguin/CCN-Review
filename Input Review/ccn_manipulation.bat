@@ -1,4 +1,4 @@
-@Echo Starting Charge Correction File Combine
+@Echo Starting Charge Correction File Manipulation
 
 SETLOCAL
 set FILE_PATH=%~dp0

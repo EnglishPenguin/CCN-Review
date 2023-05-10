@@ -1,4 +1,4 @@
-@Echo Starting Charge Correction File Review
+@Echo Preparing the Charge Correction Email
 
 SETLOCAL
 set FILE_PATH=%~dp0

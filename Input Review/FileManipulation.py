@@ -180,20 +180,13 @@ def run():
     )
 
     df3['DxPointer Review'] = df3.apply(lambda row:
-                                '' if pd.isna(row['DxPointers']) or
-                                        isinstance(row['DxPointers'], int) or
-                                        '|' not in str(row['DxPointers'])
+                                '' if (pd.isna(row['DxPointers']) and row['Original DX Count'] == row['New DX Count']) or
+                                        isinstance(row['DxPointers'], int) 
                                 else 'Review' if str(row['DxPointers']).split('|')[0] == ''
-                                    or row['Original DX Count'] != row['New DX Count']
+                                    or (row['Original DX Count'] != row['New DX Count'] and row['Max Pointer'] == 0)
+                                    or row['Max Pointer'] > row['New DX Count']
                                 else '',
                                 axis=1)
-
-    df3['Review Diagnosis'] = np.where(
-        (df3['Max Pointer'] > df3['New DX Count']) |
-        ((df3['New DX Count'] != df3['Original DX Count']) & (df3['Max Pointer'] == "")),
-        "Review",
-        ""
-    )
 
     df3.to_clipboard(index=False)
 
