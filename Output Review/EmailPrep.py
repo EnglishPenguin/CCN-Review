@@ -7,7 +7,7 @@ def run():
     FILE_PATH = 'M:/CPP-Data/Sutherland RPA/ChargeCorrection'
 
     today = dt.date.today()
-    file_date = today - dt.timedelta(days=3)
+    file_date = today - dt.timedelta(days=1)
     fd_mmddyyyy = file_date.strftime('%m%d%Y')
     fd_mm_yyyy = file_date.strftime('%m %Y')
     file_year = file_date.strftime('%Y')
@@ -28,6 +28,7 @@ def run():
     # Get the MAPI namespace of the Outlook application
     namespace = outlook.GetNamespace("MAPI")
 
+    output_path = 'C:/Users/denglish2/Desktop/emailoutput.txt'
     # Iterate through the user list and retrieve the email address for each user
     for user in user_list:
         # Search for the user in the Outlook address book
@@ -38,7 +39,12 @@ def run():
             email_address = recipient.AddressEntry.GetExchangeUser().PrimarySmtpAddress
             email_list.append(email_address)
         else:
-            print(f"No user found with alias or display name '{user}'")
+            # open the file in write mode and write the output to it
+            with open(output_path, 'w') as f:
+                f.write(f"No user found with alias or display name '{user}'")                
+            # open the file for reading and print its contents to the console
+            with open(output_path, 'r') as f:
+                print(f.read())
 
     # Create an instance of the Outlook application
     outlook = win32.Dispatch("Outlook.Application")

@@ -6,6 +6,12 @@ from dateutil.relativedelta import relativedelta
 
 def run():
     def count_delimiter(delim, ref_column, new_column):
+        """
+        Counts the number of times a specific delim appears in ref_column then outputs the count to the new_column
+        :param delim:
+        :param ref_column:
+        :param new_column:
+        """
         df3[new_column] = 0
         # Iterate over each row of the dataframe
         for index, row in df3.iterrows():
@@ -47,14 +53,12 @@ def run():
             df3[f'{new_field}']
         )
 
-    # def count_delim( delim1, input3, input4, input5):
-
 
     currentTimeDate = datetime.today()
-    currentFileDate = currentTimeDate + relativedelta(days=1)
+    currentFileDate = currentTimeDate + relativedelta(days=3)
     fd_mmddyyyy = currentFileDate.strftime('%m%d%Y')
     currentFileDate = currentFileDate.strftime('%m/%d/%Y')
-    one_year_ago = datetime.today() - relativedelta(years=1) + relativedelta(days=1)
+    one_year_ago = datetime.today() - relativedelta(years=1) + relativedelta(days=3)
     one_year_ago = one_year_ago.strftime('%m/%d/%Y')
     print(currentFileDate)
     print(one_year_ago)
@@ -98,7 +102,6 @@ def run():
         }
     )
 
-
     # if Input Invoice Balance != Query Inv Bal; Set Input Invoice Balance to Query Inv Bal value
     df3['InvoiceBalance'] = np.where(
         (df3['InvoiceBalance'] != df3['INV_BAL,']),
@@ -122,7 +125,6 @@ def run():
         df3['STEP']
     )
 
-
     df3['Exclude DOS > 1 Year'] = np.where(
         (df3['BAR_B_INV.SER_DT,'] <= one_year_ago),
         "Exclude",
@@ -136,6 +138,8 @@ def run():
         "Review",
         ""
     )
+
+    df3['Valid FSC'] = df3.apply(lambda row: "Review" if len(str(row['Insurance'])) != 4 else "", axis=1)
 
     df3['STEP'] = df3.apply(
         lambda row: 4 if (len(str(row['OriginalCPT'])) > len(str(row['NewCPT']))) and (row['STEP'] != 4) else row['STEP'],
@@ -171,7 +175,7 @@ def run():
 
     count_delimiter(delim=',', ref_column='OriginalDX', new_column='Original DX Count')
     count_delimiter(delim=',', ref_column='NewDX', new_column='New DX Count')
-
+    
     df3['Max Pointer'] = df3['DxPointers'].apply(
         lambda x: int(max([int(i) for i in str(x).replace('|', ',').split(',') if i.isdigit()]))
         if any(i.isdigit() for i in str(x))
@@ -179,14 +183,26 @@ def run():
         else 0
     )
 
-    df3['DxPointer Review'] = df3.apply(lambda row:
-                                '' if (pd.isna(row['DxPointers']) and row['Original DX Count'] == row['New DX Count']) or
-                                        isinstance(row['DxPointers'], int) 
-                                else 'Review' if str(row['DxPointers']).split('|')[0] == ''
-                                    or (row['Original DX Count'] != row['New DX Count'] and row['Max Pointer'] == 0)
-                                    or row['Max Pointer'] > row['New DX Count']
-                                else '',
-                                axis=1)
+    # df3['DxPointer Review'] = df3.apply(lambda row:
+    #                             '' if (pd.isna(row['DxPointers']) and row['Original DX Count'] == row['New DX Count'])
+    #                             else 'Review' if str(row['DxPointers']).split('|')[0] == ''
+    #                                 or (row['Original DX Count'] != row['New DX Count'] and row['Max Pointer'] == 0)
+    #                                 or row['Max Pointer'] > row['New DX Count']
+    #                             else '',
+    #                             axis=1)
+
+    count_delimiter(delim='|', ref_column='DxPointers', new_column='DxPointers Count')
+    df3['DxPointers Null'] = df3.apply(lambda row: True if pd.isna(row['DxPointers']) else False, axis=1)
+    df3['DxPointers String'] = df3.apply(lambda row: False if row['DxPointers Null'] else 
+                                  (True if any(val.strip() == '' for val in str(row['DxPointers']).split('|')) else False),
+                                  axis=1)
+    
+    df3['DxPointer Review'] = np.where(
+    ((df3['Original DX Count'] > df3['New DX Count']) & (df3['DxPointers String'])) |
+    ((df3['Original DX Count'] != df3['New DX Count']) & (df3['Max Pointer'] == 0)) |
+    ((df3['Max Pointer'] > df3['New DX Count']) & (df3['Original DX Count'] != 0) & (df3['New DX Count'] != 0)),
+    'Review',
+    '')
 
     df3.to_clipboard(index=False)
 
