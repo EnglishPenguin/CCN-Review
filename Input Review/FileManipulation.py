@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 
 
@@ -54,11 +54,30 @@ def run():
         )
 
 
-    currentTimeDate = datetime.today()
-    currentFileDate = currentTimeDate + relativedelta(days=3)
-    fd_mmddyyyy = currentFileDate.strftime('%m%d%Y')
-    currentFileDate = currentFileDate.strftime('%m/%d/%Y')
-    one_year_ago = datetime.today() - relativedelta(years=1) + relativedelta(days=3)
+    # currentTimeDate = datetime.today()
+    # currentFileDate = currentTimeDate + relativedelta(days=3)
+
+    today = date.today()
+
+    # if today is Friday
+    if today.weekday() == 4:
+        # set FILE_DATE to today + 3
+        file_date = today + timedelta(days=3)
+    else:
+        # set FILE_DATE to today + 1
+        file_date = today + timedelta(days=1)
+
+    last_day_of_month = (file_date.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    if file_date == last_day_of_month:
+        # advance to the next day until it's a business day
+        while True:
+            file_date += timedelta(days=1)
+            if file_date.weekday() < 5:
+                break
+
+    fd_mmddyyyy = file_date.strftime('%m%d%Y')
+    currentFileDate = file_date.strftime('%m/%d/%Y')
+    one_year_ago = file_date - relativedelta(years=1) + relativedelta(days=1)
     one_year_ago = one_year_ago.strftime('%m/%d/%Y')
     print(currentFileDate)
     print(one_year_ago)
@@ -125,6 +144,7 @@ def run():
         df3['STEP']
     )
 
+    # If the DOS is greater than 1 year from the file date, Append 'exclude' to the row in the 'Exclude DOS > 1 Year' column
     df3['Exclude DOS > 1 Year'] = np.where(
         (df3['BAR_B_INV.SER_DT,'] <= one_year_ago),
         "Exclude",
@@ -139,8 +159,10 @@ def run():
         ""
     )
 
+    # Check if the length of the FSC String is equal to 4, if not it will flag it for review
     df3['Valid FSC'] = df3.apply(lambda row: "Review" if len(str(row['Insurance'])) != 4 else "", axis=1)
 
+    # If a CPT has been removed from the 'OriginalCPT' list, then set the step to 4, otherwise keep it as is
     df3['STEP'] = df3.apply(
         lambda row: 4 if (len(str(row['OriginalCPT'])) > len(str(row['NewCPT']))) and (row['STEP'] != 4) else row['STEP'],
         axis=1
@@ -165,6 +187,7 @@ def run():
         df3['OriginalCPT']
     )
 
+    # Clears the original field if Orig = New. Clears the new field if the Orig = null
     is_orig_equal_new('ProviderName', 'NewProvider')
     is_orig_blank('NewProvider', 'ProviderName')
     is_orig_equal_new('OriginalLocation', 'NewLocation')
@@ -173,9 +196,12 @@ def run():
     is_orig_equal_new('OriginalDX', 'NewDX')
     is_orig_blank('NewDX', 'OriginalDX')
 
+    # Count Delimiters in the specified fields
     count_delimiter(delim=',', ref_column='OriginalDX', new_column='Original DX Count')
     count_delimiter(delim=',', ref_column='NewDX', new_column='New DX Count')
+    count_delimiter(delim='|', ref_column='DxPointers', new_column='DxPointers Count')
     
+    # Finds the largest integere in the "DxPointers" column
     df3['Max Pointer'] = df3['DxPointers'].apply(
         lambda x: int(max([int(i) for i in str(x).replace('|', ',').split(',') if i.isdigit()]))
         if any(i.isdigit() for i in str(x))
@@ -183,20 +209,18 @@ def run():
         else 0
     )
 
-    # df3['DxPointer Review'] = df3.apply(lambda row:
-    #                             '' if (pd.isna(row['DxPointers']) and row['Original DX Count'] == row['New DX Count'])
-    #                             else 'Review' if str(row['DxPointers']).split('|')[0] == ''
-    #                                 or (row['Original DX Count'] != row['New DX Count'] and row['Max Pointer'] == 0)
-    #                                 or row['Max Pointer'] > row['New DX Count']
-    #                             else '',
-    #                             axis=1)
-
-    count_delimiter(delim='|', ref_column='DxPointers', new_column='DxPointers Count')
+    # Appends 'True' if "DxPointers" is null, otherwise 'False'
     df3['DxPointers Null'] = df3.apply(lambda row: True if pd.isna(row['DxPointers']) else False, axis=1)
+
+    # Appends 'False' if "DxPointers Null" is true, Otherwise 'True' if any string before the "|" is a null string
     df3['DxPointers String'] = df3.apply(lambda row: False if row['DxPointers Null'] else 
                                   (True if any(val.strip() == '' for val in str(row['DxPointers']).split('|')) else False),
                                   axis=1)
     
+    # Evaluates if DxPointers need to be reviewed. 
+    # 1) Orig Count > New Count & DxPointers String == True
+    # 2) Orig Count != New Count & Max Pointer == 0
+    # 3) Max Pointer > New Count & Orig Count != 0 & New Count != 0
     df3['DxPointer Review'] = np.where(
     ((df3['Original DX Count'] > df3['New DX Count']) & (df3['DxPointers String'])) |
     ((df3['Original DX Count'] != df3['New DX Count']) & (df3['Max Pointer'] == 0)) |
@@ -204,6 +228,7 @@ def run():
     'Review',
     '')
 
+    # Takes all values and moves it to the clipboard to be pasted on the review file
     df3.to_clipboard(index=False)
 
 if __name__ == '__main__':
