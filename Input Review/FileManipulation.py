@@ -199,8 +199,7 @@ def run():
     # Count Delimiters in the specified fields
     count_delimiter(delim=',', ref_column='OriginalDX', new_column='Original DX Count')
     count_delimiter(delim=',', ref_column='NewDX', new_column='New DX Count')
-    count_delimiter(delim='|', ref_column='DxPointers', new_column='DxPointers Count')
-    
+
     # Finds the largest integere in the "DxPointers" column
     df3['Max Pointer'] = df3['DxPointers'].apply(
         lambda x: int(max([int(i) for i in str(x).replace('|', ',').split(',') if i.isdigit()]))
@@ -208,6 +207,8 @@ def run():
         and len([int(i) for i in str(x).replace('|', ',').split(',') if i.isdigit()]) > 0
         else 0
     )
+
+    count_delimiter(delim='|', ref_column='DxPointers', new_column='DxPointers Count')
 
     # Appends 'True' if "DxPointers" is null, otherwise 'False'
     df3['DxPointers Null'] = df3.apply(lambda row: True if pd.isna(row['DxPointers']) else False, axis=1)

@@ -6,7 +6,10 @@ import os
 
 def run():
     def is_file_in_use(file_path):
-        """Determines if the file is open and Returns boolean. Raises FileNotFoundError if the file does not exist"""
+        """
+        Determines if the file is open and Returns boolean. Raises FileNotFoundError if the file does not exist
+        :param file_path:
+        """
         path = Path(file_path)
 
         if not path.exists():
@@ -21,7 +24,10 @@ def run():
 
 
     def truncate_file_name(file_name):
-        """Takes the full file path and Returns a truncated file name"""
+        """
+        Takes the full file path and Returns a truncated file name
+        :param file_name:
+        """
         short_name = file_name.replace(f"{P1_FILE_PATH}", "").replace(f"{P2_FILE_PATH}", "").replace(f"{ARS_FILE_PATH}", "")
         short_name = short_name.lstrip(f"\\{file_date}\\ ")
         return short_name

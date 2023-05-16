@@ -8,15 +8,29 @@ def run():
     CROSSWALK_FILE = 'M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/References/RetrievalDescriptionCrosswalk.csv'
 
     today = dt.date.today()
-    file_date = today - dt.timedelta(days=1)
+    # file_date = today - dt.timedelta(days=1)
+    # if today is Monday
+    if today.weekday() == 0:
+        # set FILE_DATE to today - 3
+        file_date = today - dt.timedelta(days=3)
+    else:
+        # set FILE_DATE to today - 1
+        file_date = today - dt.timedelta(days=1)
+
+    last_day_of_month = (file_date.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    if file_date == last_day_of_month:
+        # backtrack to the previous day until it's a business day
+        while True:
+            file_date -= timedelta(days=1)
+            if file_date.weekday() < 5:
+                break
+
     fd_mmddyyyy = file_date.strftime('%m%d%Y')
     fd_mm_yyyy = file_date.strftime('%m %Y')
     file_year = file_date.strftime('%Y')
-    fd_mm_dd = file_date.strftime('%m/%d')
 
     file_to_review = f'{FILE_PATH}/{file_year}/{fd_mm_yyyy}/{fd_mmddyyyy}/DP Comments Template.xlsx'
     output_file = f'{FILE_PATH}/{file_year}/{fd_mm_yyyy}/{fd_mmddyyyy}/Northwell_ChargeCorrection_Output_{fd_mmddyyyy}.xls'
-    ccn_checker = f'{FILE_PATH}/{file_year}/{fd_mm_yyyy}/{fd_mmddyyyy}/CCN Output Checker.xlsb'
     rep_submission_file = f'M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/Inputs/{file_year}/{fd_mm_yyyy} Inputs.xlsx'
 
     df_dp_export = pd.read_excel(file_to_review, sheet_name="export", engine="openpyxl")
