@@ -16,11 +16,11 @@ def run():
         # set FILE_DATE to today - 1
         file_date = today - dt.timedelta(days=1)
 
-    last_day_of_month = (file_date.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    last_day_of_month = (file_date.replace(day=28) + dt.timedelta(days=4)).replace(day=1) - dt.timedelta(days=1)
     if file_date == last_day_of_month:
         # backtrack to the previous day until it's a business day
         while True:
-            file_date -= timedelta(days=1)
+            file_date -= dt.timedelta(days=1)
             if file_date.weekday() < 5:
                 break
 
