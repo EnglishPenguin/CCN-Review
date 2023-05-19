@@ -48,6 +48,9 @@ def run():
         'DxPointers Null', 
         'DxPointers String', 
         'DxPointer Review', 
+        'BAR_B_TXN_LI_PAY.PAY_CODE__2',
+        'unique_paycode_count',
+        'Exclude Multi Paycode',
         'Exclude'
         ])
     
