@@ -110,6 +110,8 @@ def run():
             "BAR_B_INV.CHG_CORR_FLAG,"
         ], axis=1
     )
+    df_counts = df2.groupby('Invoice')['BAR_B_TXN_LI_PAY.PAY_CODE__2'].nunique().reset_index(name='unique_paycode_count')
+    df2 = df2.merge(df_counts,how='left',on='Invoice')
     df3 = df1.merge(df2, how='left', on='Invoice')
     df3 = df3.drop_duplicates(subset='Invoice', keep='last')
     df3 = df3.astype(
@@ -142,6 +144,14 @@ def run():
         (df3['STEP'] == 2),
         3,
         df3['STEP']
+    )
+
+    # If the invoice has more than 1 paycode in the LI Detail and step is not= 2, exclude
+    df3['Exclude Multi Paycode'] = np.where(
+        (df3['unique_paycode_count'] > 1) &
+        (df3['STEP'] != 2),
+        "Exclude",
+        ""
     )
 
     # If the DOS is greater than 1 year from the file date, Append 'exclude' to the row in the 'Exclude DOS > 1 Year' column
@@ -229,6 +239,7 @@ def run():
     'Review',
     '')
 
+    df3['Exclude'] = ""
     # Takes all values and moves it to the clipboard to be pasted on the review file
     df3.to_clipboard(index=False)
 
