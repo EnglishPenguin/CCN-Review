@@ -242,6 +242,8 @@ def run():
     df3['Exclude'] = ""
     # Takes all values and moves it to the clipboard to be pasted on the review file
     df3.to_clipboard(index=False)
+    # with pd.ExcelWriter(f) as writer:
+    #     df3.to_excel(writer, sheet_name="Sheet4")
 
 if __name__ == '__main__':
     run()
