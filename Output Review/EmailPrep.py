@@ -31,12 +31,50 @@ def run():
 
     file_to_review = f'{FILE_PATH}/{file_year}/{fd_mm_yyyy}/{fd_mmddyyyy}/DP Comments Northwell_ChargeCorrection_Output_{fd_mmddyyyy}.xlsx'
 
-    df_email = pd.read_excel(file_to_review, sheet_name="Sheet3", engine="openpyxl")
+    df_email = pd.read_excel(file_to_review, sheet_name="Sheet1", engine="openpyxl")
+    df_errors = df_email[df_email['DP Category'] != 'Success']
+    df_errors = df_errors[df_errors['Action'] != 'No Action Needed']
 
     user_list = []
     email_list = []
-    for rep in df_email['Rep Name'].unique():
+    for rep in df_errors['Rep Username'].unique():
         user_list.append(rep)
+    for rep in df_errors['Rep Name'].unique():
+        user_list.append(rep)
+
+    df_errors = df_errors.drop(columns=[
+            'PAYER',
+            'CRN#',
+            'InvBal',
+            'CPT',
+            'RevisedCPTList',
+            'InvoiceDOS',
+            'OriginalLocation',
+            'NewLocation',
+            'OriginalDX',
+            'NewDX',
+            'DxPointers',
+            'OriginalModifier',
+            'NewModifier',
+            'TXN',
+            'ActionAddRemoveReplace',
+            'StatusID',
+            'RetrievalStatus',
+            'RetrievalDescription',
+            'DP Status',
+            'DP Comments',
+            'Rep Username',
+            'Supervisor',
+            'Department']).sort_values(by='Rep Name')
+    df_errors = df_errors[['Rep Name', 'INVNUM', 'DP Category', 'Action']]
+
+    # Provide the desired sheet name for the errors
+    sheet_name = 'Sheet3'  
+
+    # Open the Excel file
+    with pd.ExcelWriter(file_to_review, mode='a', engine='openpyxl') as writer:
+        # Write the DataFrame to a new sheet
+        df_errors.to_excel(writer, sheet_name=sheet_name, index=False)
 
     # Create an instance of the Outlook application
     outlook = win32.Dispatch("Outlook.Application")
@@ -71,7 +109,7 @@ def run():
     mail.Subject = f"The {fd_mm_dd} CCN output file is ready for review."
 
     # Convert the DataFrame to an HTML table
-    html_table = df_email.to_html(index=False, classes="dataframe", border=2, justify="center")
+    html_table = df_errors.to_html(index=False, classes="dataframe", border=2, justify="center")
 
     html_body = f"""
     <p>Greetings,</p>
@@ -94,7 +132,7 @@ def run():
 
     """
     mail.HTMLBody = html_body
-
+    email_list = list(set(email_list))
     # Set the To: field of the email message
     for email_address in email_list:
         mail.Recipients.Add(email_address)

@@ -137,11 +137,47 @@ def run():
         ]
     )
 
+    df3 = pd.DataFrame(
+        columns=[
+        'Invoice',
+        'BAR_B_INV.SER_DT,',
+        'BAR_B_TXN.SER_DT,',
+        'BAR_B_INV.TOT_CHG,',
+        'INV_BAL,',
+        'PROV__1,',
+        'LOC__2,',
+        'BAR_B_INV.ORIG_FSC__5,',
+        'BAR_B_INV.DX_ONE__3,',
+        'DX_TWO__3,',
+        'DX_THREE__3,',
+        'DX_FOUR__3,',
+        'DX_FIVE__3,',
+        'DX_SIX__3,',
+        'DX_SEVEN__3,',
+        'DX_EIGHT__3,',
+        'DX_NINE__3,',
+        'DX_TEN__3,',
+        'BAR_B_INV.DX_ELEVEN__3,',
+        'BAR_B_INV.DX_TWELVE__3,',
+        'TXN_NUM,',
+        'PROC__2,',
+        'MOD,',
+        'BAR_B_TXN.DX_NUM,',
+        'BAR_B_INV.CHG_CORR_FLAG,',
+        'BAR_B_INV.CORR_INV_NUM',
+        'BAR_B_TXN_LI_PAY.PAY_CODE__2'
+        ]
+        )
+
     # Writes the finale DataFrame to a new Excel sheet this becomes the Input File
     OUT_PATH_1 = "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/Audits - Files Sent to Bot/"
     OUT_PATH_2 = "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/Inputs/"
+    
     df1.to_excel(f'{OUT_PATH_1}Northwell_ChargeCorrection_Input_{file_date_plain}.xlsx', index=False)
-
+    with pd.ExcelWriter(f'{OUT_PATH_1}Northwell_ChargeCorrection_Input_{file_date_plain}.xlsx', mode='a', engine='openpyxl') as writer:
+        # Write the DataFrame to a new sheet
+        df3.to_excel(writer, sheet_name='Sheet2', index=False)
+    
     # Create the input reference file
     df2 = df1[["Invoice", "ActionAddRemoveReplace", "Reason", "STEP"]].copy()
     df2["File Name"] = trunc_file_list

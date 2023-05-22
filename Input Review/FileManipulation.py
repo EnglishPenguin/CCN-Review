@@ -161,14 +161,6 @@ def run():
         ""
     )
 
-    # If Insurance != Orig FSC and Step != 2; set Review to True
-    df3['FSC Review'] = np.where(
-        (df3['Insurance'] != df3['BAR_B_INV.ORIG_FSC__5,']) &
-        (df3['STEP'] != 2),
-        "Review",
-        ""
-    )
-
     # Check if the length of the FSC String is equal to 4, if not it will flag it for review
     df3['Valid FSC'] = df3.apply(lambda row: "Review" if len(str(row['Insurance'])) != 4 else "", axis=1)
 
@@ -241,9 +233,12 @@ def run():
 
     df3['Exclude'] = ""
     # Takes all values and moves it to the clipboard to be pasted on the review file
-    df3.to_clipboard(index=False)
-    # with pd.ExcelWriter(f) as writer:
-    #     df3.to_excel(writer, sheet_name="Sheet4")
+    # df3.to_clipboard(index=False)
+    sheet_name = 'Sheet3'  # Provide the desired sheet name
 
+    # Open the Excel file
+    with pd.ExcelWriter(f, mode='a', engine='openpyxl') as writer:
+        # Write the DataFrame to a new sheet
+        df3.to_excel(writer, sheet_name=sheet_name, index=False)
 if __name__ == '__main__':
     run()
