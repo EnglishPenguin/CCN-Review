@@ -165,10 +165,10 @@ def run():
     df3['Valid FSC'] = df3.apply(lambda row: "Review" if len(str(row['Insurance'])) != 4 else "", axis=1)
 
     # If a CPT has been removed from the 'OriginalCPT' list, then set the step to 4, otherwise keep it as is
-    df3['STEP'] = df3.apply(
-        lambda row: 4 if (len(str(row['OriginalCPT'])) > len(str(row['NewCPT']))) and (row['STEP'] != 4) else row['STEP'],
-        axis=1
-    )
+    # df3['STEP'] = df3.apply(
+    #     lambda row: 4 if (len(str(row['OriginalCPT'])) > len(str(row['NewCPT']))) and (row['STEP'] != 4) else row['STEP'],
+    #     axis=1
+    # )
 
     # If Original Modifier is not null & New Modifier is null; set Review to True
     df3['Modifier Review'] = np.where(

@@ -96,10 +96,12 @@ Step 4 - Perform manual review of the CCN Output.
 Invoices labeled with C00 are almost always successful. You will need to review these to ensure the rep did not use the wrong step which would leave a credit bal on the original.
 Invoices with an E## retrieval code will need to have the screenshots reviewed. Especially the ones which have "REVIEW" listed in the cell for the DP Comment/DP Category
 Invoices with a P00 error will need to be manually viewed to determine the error.
-If you want to exclude the invoice from being sent to the Rep, DP Category needs to = 'Success' or Action needs to = 'No Action Necessary'
+If you want to exclude the invoice from being sent to the Rep, DP Category needs to = 'Success' or Action needs to = 'No Action Needed'
+Perform a VLOOKUP against the CCN Checker for negative balances and check the step. If step 2 = Partial Success, rep needs to carry forward payments
+Perform a VLOOKUP against the CCN Checker for Corrected Invoice Number. If the invoice has been corrected and not a Rep Error, put "No Action Needed" in the "Action" column
 
 Step 5 - Create a pivot table of the DP Comments Template 'Sheet1'. Use Department, Supervisor, Representative for the Rows. Use DP Category for the columns.
-For Values use the Count of DP Category.
+For Values use the Count of DP Category. Rename the file
 
 Step 6 - Run EmailPrep.py
 This will grab the user names from 'Sheet1', filter out any Successes and any line listed with 'No Action Needed' in the action column and collect their email addresses. 
