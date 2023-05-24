@@ -98,7 +98,7 @@ Invoices with an E## retrieval code will need to have the screenshots reviewed. 
 Invoices with a P00 error will need to be manually viewed to determine the error.
 If you want to exclude the invoice from being sent to the Rep, DP Category needs to = 'Success' or Action needs to = 'No Action Necessary'
 
-Step 5 - Create a pivot table of the DP Commnets Template 'Sheet1'. Use Department, Supervisor, Representative for the Rows. Use DP Category for the columns.
+Step 5 - Create a pivot table of the DP Comments Template 'Sheet1'. Use Department, Supervisor, Representative for the Rows. Use DP Category for the columns.
 For Values use the Count of DP Category.
 
 Step 6 - Run EmailPrep.py
