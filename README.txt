@@ -51,7 +51,7 @@ M:\CPP-Data\Sutherland RPA\Northwell Process Automation ETM Files\Monthly Report
 Step 2 - Take the invoice Numbers to Athena IDX and load them into your custom table. Then run the RPA_CCN_VERIFY_PAYCODE query. 
 If you need to copy the query the full name is: DENGLISH2_RPA_CCN_VERIFY_PAYCODE. Be sure to update the query to use your specific custom table
 
-Step 3 - Open the file and save the output of the query to Sheet2 on the file created in Step1
+Step 3 - Open the file and save the output of the query to Sheet2 on the file created in Step1. Save and close the file before proceeding
 
 Step 4. Rune FileManipulation.py
 This will output the manipulations to a new sheet named 'Sheet3' on the same file
@@ -83,6 +83,7 @@ ______           _
                                  
 
 Step 1 - Run file_review.py
+This will make a copy of the DP Comments Template and CCN Checker files to the appropriate folder for the file date to be reviewed
 This will copy the data from the output file from Sutherland to the DP Comments Template file. 
 It will also assign the DP Status/Comment/Category/Action for the most likely Retrieval Descriptions.
 
