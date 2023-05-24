@@ -187,11 +187,15 @@ def run():
     # df2.to_excel(writer2, index=False)
     df2.to_excel(f"{OUT_PATH_2}{year}/{month} {year}/Invoice Numbers and Rep Names {file_date_w_spaces}.xlsx", index=False)
 
-    # print(f"These are the files that are still open: \n{open_file_list}")
-    # print(f"These are the files without any entries: \n{empty_file_list}")
+    # output_path = 'C:/Users/denglish2/Desktop/output.txt'
+    # Get the path to the desktop directory of the current user
+    desktop_path = os.path.expanduser("~/Desktop")
 
-    output_path = 'C:/Users/denglish2/Desktop/output.txt'
+    # Specify the output file name
+    output_filename = "OpenOrInUseFilesOutput.txt"
 
+    # Create the full output file path
+    output_path = os.path.join(desktop_path, output_filename)
     # open the file in write mode and write the output to it
     with open(output_path, 'w') as f:
         f.write(f"These are the files that are still open: \n{open_file_list}\n")

@@ -1,6 +1,7 @@
 import pandas as pd
 import datetime as dt
 import win32com.client as win32
+import os
 
 
 def run():
@@ -78,11 +79,16 @@ def run():
 
     # Create an instance of the Outlook application
     outlook = win32.Dispatch("Outlook.Application")
-
     # Get the MAPI namespace of the Outlook application
     namespace = outlook.GetNamespace("MAPI")
 
-    output_path = 'C:/Users/denglish2/Desktop/emailoutput.txt'
+    # Get the path to the desktop directory of the current user
+    desktop_path = os.path.expanduser("~/Desktop")
+    # Specify the output file name
+    output_filename = "EmailAddressNotFoundOutput.txt"
+    # Create the full output file path
+    output_path = os.path.join(desktop_path, output_filename)
+
     # Iterate through the user list and retrieve the email address for each user
     for user in user_list:
         # Search for the user in the Outlook address book
@@ -95,7 +101,7 @@ def run():
         else:
             # open the file in write mode and write the output to it
             with open(output_path, 'w') as f:
-                f.write(f"No user found with alias or display name '{user}'")                
+                f.write(f"No email address found for alias or display name: '{user}'")                
             # open the file for reading and print its contents to the console
             with open(output_path, 'r') as f:
                 print(f.read())
