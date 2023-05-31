@@ -197,6 +197,7 @@ def run():
     is_orig_blank('NewCPT', 'OriginalCPT')
     is_orig_equal_new('OriginalDX', 'NewDX')
     is_orig_blank('NewDX', 'OriginalDX')
+    is_orig_blank('OriginalDOS', 'NewDOS')
 
     # Count Delimiters in the specified fields
     count_delimiter(delim=',', ref_column='OriginalDX', new_column='Original DX Count')
@@ -231,10 +232,11 @@ def run():
     'Review',
     '')
 
+    # Creates a new column named 'Exclude' and sets the values in that column to blank
     df3['Exclude'] = ""
-    # Takes all values and moves it to the clipboard to be pasted on the review file
-    # df3.to_clipboard(index=False)
-    sheet_name = 'Sheet3'  # Provide the desired sheet name
+
+    # Provide the desired sheet name
+    sheet_name = 'Sheet3' 
 
     # Open the Excel file
     with pd.ExcelWriter(f, mode='a', engine='openpyxl') as writer:
