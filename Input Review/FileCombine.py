@@ -3,6 +3,7 @@ import glob
 from datetime import date, timedelta
 from pathlib import Path
 import os
+import win32com.client as win32
 
 def run():
     def is_file_in_use(file_path):
@@ -73,6 +74,9 @@ def run():
     trunc_file_list = []
     final = []
     rep_name_list = []
+    empty_file_name_list = []
+    open_file_name_list = []
+    email_list = []
 
     # Creates a LIST containing the file paths for a given file date
     for f in file_paths:
@@ -85,6 +89,7 @@ def run():
         trunc_file = truncate_file_name(f)
         if is_file_in_use(f) and '~$' not in f:
             open_file_list.append(trunc_file)
+            open_file_name_list.append(trunc_file.replace(f" {file_date_w_spaces}.xlsm", ""))
         elif '~$' not in f:
             df = pd.read_excel(f, engine="openpyxl")
             if not df.empty:
@@ -94,6 +99,7 @@ def run():
                     rep_name_list.append(trunc_file.replace(f" {file_date_w_spaces}.xlsm", ""))
             else:
                 empty_file_list.append(trunc_file)
+                empty_file_name_list.append(trunc_file.replace(f" {file_date_w_spaces}.xlsm", ""))
                 # print(f"the file {trunc_file} is empty")
         else:
             continue
@@ -204,6 +210,67 @@ def run():
     # open the file for reading and print its contents to the console
     with open(output_path, 'r') as f:
         print(f.read())
+
+    # Create an instance of the Outlook application
+    outlook = win32.Dispatch("Outlook.Application")
+    # Get the MAPI namespace of the Outlook application
+    namespace = outlook.GetNamespace("MAPI")
+
+    for rep in empty_file_name_list:
+        # Search for the user in the Outlook address book
+        recipient = namespace.CreateRecipient(rep)
+        recipient.Resolve()
+        if recipient.Resolved:
+            # Retrieve the user's email address from the resolved recipient object
+            email_address = recipient.AddressEntry.GetExchangeUser().PrimarySmtpAddress
+            email_list.append(email_address)
+        else:
+            print(f"No email address found for alias or display name: '{rep}'")
+
+    for rep in open_file_name_list:
+        # Search for the user in the Outlook address book
+        recipient = namespace.CreateRecipient(rep)
+        recipient.Resolve()
+        if recipient.Resolved:
+            # Retrieve the user's email address from the resolved recipient object
+            email_address = recipient.AddressEntry.GetExchangeUser().PrimarySmtpAddress
+            email_list.append(email_address)
+        else:
+            print(f"No email address found for alias or display name: '{rep}'")
+
+    # Create a new email message
+    mail = outlook.CreateItem(0)
+
+    mail.Subject = f"CCN Input - Open or Blank"
+
+    html_body = f"""
+    <p>Good Afternoon,</p>
+    <p>In attempting to combine the charge correction input file, I was notified that your file is currently open or contains no invoices.</p>
+    <p><strong><u>The Files belonging to the following users are currently open and WILL NOT be sent to the bot. Please re-add any corrections to your file for the next business day and remember to close your file on time:</u></strong>.<br>
+    {open_file_name_list}</p>
+    <p><strong><u>The files belonging to the following users have no invoices. While no further action is required, please do not open a file until you have an invoice to correct:</u></strong><br>
+    {empty_file_name_list}</p>
+    <p>
+        <strong>Thank you,<br>
+        ORCCA Team</strong><br>
+        <span style="font-size: 9pt;">
+            Optimizing Revenue Cycle with Cognitive Automation (ORCCA) Team<br>
+            Northwell Health Physician Partners<br>
+            1111 Marcus Avenue, Ste. M04<br>
+            Lake Success, NY 11042
+        </span><br><br>
+        <span style="font-family: Arial; font-size: 11pt; color: #002060;"><strong>Northwell Health</strong></span><br>
+    </p>
+
+    """
+    mail.HTMLBody = html_body
+    email_list = list(set(email_list))
+    # Set the To: field of the email message
+    for email_address in email_list:
+        mail.Recipients.Add(email_address)
+
+    # Display the email message (leave it open for editing)
+    mail.Display(False)
 
 
 if __name__ == '__main__':
