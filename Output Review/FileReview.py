@@ -9,7 +9,9 @@ def run():
     CROSSWALK_FILE = 'M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/References/RetrievalDescriptionCrosswalk.csv'
 
     today = dt.date.today()
+    # Use this to manually set the file_date
     # file_date = today - dt.timedelta(days=1)
+    
     # if today is Monday
     if today.weekday() == 0:
         # set FILE_DATE to today - 3
