@@ -31,6 +31,7 @@ def run():
     df = pd.read_excel(f, sheet_name="Sheet3", engine="openpyxl")
     df = df[df['Exclude'] != 'Exclude']
 
+    # Drop reference columns
     df = df.drop(columns= [
         'BAR_B_INV.SER_DT,', 
         'BAR_B_INV.TOT_CHG,', 
@@ -50,9 +51,14 @@ def run():
         'BAR_B_TXN_LI_PAY.PAY_CODE__2',
         'unique_paycode_count',
         'Exclude Multi Paycode',
+        'FSC REVIEW',
         'Exclude'
         ])
     
+    # Remove whitespace in the CRN column
+    df['ClaimReferenceNumber'] = df['ClaimReferenceNumber'].str.strip()
+
+    # Save the file as a csv at the appropriate location for pickup by Sutherland
     f_csv = f"Northwell_ChargeCorrection_Input_{fd_mmddyyyy}.csv"
     df.to_csv(f'{OUT_PATH}/{f_csv}', index=False)
 

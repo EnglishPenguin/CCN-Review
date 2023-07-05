@@ -64,7 +64,7 @@ def run():
         # set FILE_DATE to today + 3
         file_date = today + timedelta(days=3)
     else:
-        # set FILE_DATE to today + 1
+        # set FILE_DATE to today + 1 
         file_date = today + timedelta(days=1)
 
     last_day_of_month = (file_date.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
@@ -83,7 +83,11 @@ def run():
     print(one_year_ago)
 
     FILE_PATH = 'M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/Audits - Files Sent to Bot'
+    FSC_GRID = 'M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/References/FSCs that accept electronic CCL.xlsx'
+
     f = f"{FILE_PATH}/Northwell_ChargeCorrection_Input_{fd_mmddyyyy}.xlsx"
+    fsc_df = pd.read_excel(FSC_GRID, sheet_name='Updated 04 19 2023', engine="openpyxl")
+    fsc_values = fsc_df['FSC'].tolist()
     df1 = pd.read_excel(f, sheet_name="Sheet1", engine="openpyxl")
     df2 = pd.read_excel(f, sheet_name="Sheet2", engine="openpyxl")
     df2 = df2.drop(
@@ -122,6 +126,9 @@ def run():
             'STEP': 'int64'
         }
     )
+
+    # Check if the FSC in the Insurance column is part of the list of allowed FSCs
+    df3['FSC REVIEW'] = np.where(df1['Insurance'].isin(fsc_values), '', 'Review')
 
     # if Input Invoice Balance != Query Inv Bal; Set Input Invoice Balance to Query Inv Bal value
     df3['InvoiceBalance'] = np.where(
@@ -165,10 +172,10 @@ def run():
     df3['Valid FSC'] = df3.apply(lambda row: "Review" if len(str(row['Insurance'])) != 4 else "", axis=1)
 
     # If a CPT has been removed from the 'OriginalCPT' list, then set the step to 4, otherwise keep it as is
-    # df3['STEP'] = df3.apply(
-    #     lambda row: 4 if (len(str(row['OriginalCPT'])) > len(str(row['NewCPT']))) and (row['STEP'] != 4) else row['STEP'],
-    #     axis=1
-    # )
+    df3['STEP'] = df3.apply(
+        lambda row: 4 if (len(str(row['OriginalCPT'])) > len(str(row['NewCPT']))) and (row['STEP'] != 4) else row['STEP'],
+        axis=1
+    )
 
     # If Original Modifier is not null & New Modifier is null; set Review to True
     df3['Modifier Review'] = np.where(

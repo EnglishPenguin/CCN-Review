@@ -29,6 +29,7 @@ def run():
         Takes the full file path and Returns a truncated file name
         :param file_name:
         """
+        # short_name = file_name.replace(f"{P1_FILE_PATH}", "").replace(f"{P2_FILE_PATH}", "").replace(f"{ARS_FILE_PATH}", "").replace(f"{B16_FILE_PATH}", "")
         short_name = file_name.replace(f"{P1_FILE_PATH}", "").replace(f"{P2_FILE_PATH}", "").replace(f"{ARS_FILE_PATH}", "")
         short_name = short_name.lstrip(f"\\{file_date}\\ ")
         return short_name
@@ -37,7 +38,9 @@ def run():
     ARS_FILE_PATH = "M:/CPP-Data/AR SUPPORT/SPECIAL PROJECTS/CHARGE CORRECTION BOT/SPREADSHEETS TO SEND TO BOT"
     P1_FILE_PATH = "M:/CPP-Data/Payor 1/Bot CCN"
     P2_FILE_PATH = "M:/CPP-Data/Payer 2/BOTS/Charge Correction Files"
+    # B16_FILE_PATH = "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/New vs Established/Formatted Inputs"
 
+    # file_paths = [ARS_FILE_PATH, P1_FILE_PATH, P2_FILE_PATH, B16_FILE_PATH]
     file_paths = [ARS_FILE_PATH, P1_FILE_PATH, P2_FILE_PATH]
 
     today = date.today()
@@ -80,26 +83,30 @@ def run():
 
     # Creates a LIST containing the file paths for a given file date
     for f in file_paths:
-        files += glob.glob(f'{f}/*{file_date_plain}/*.xlsm')
+        files += glob.glob(f'{f}/*{file_date_plain}/*')
     # print(files)
 
     # Goes through the File List. Checks if the file is open.
     # If it's not open it attempts to create a list of Pandas DataFrames
     for f in files:
         trunc_file = truncate_file_name(f)
+        if '.xlsm' in trunc_file:
+            trunc_file_no_ext = trunc_file.replace(f" {file_date_w_spaces}.xlsm", "")
+        else:
+            trunc_file_no_ext = trunc_file.replace(f" {file_date_w_spaces}.xlsx", "")
         if is_file_in_use(f) and '~$' not in f:
             open_file_list.append(trunc_file)
-            open_file_name_list.append(trunc_file.replace(f" {file_date_w_spaces}.xlsm", ""))
+            open_file_name_list.append(trunc_file_no_ext)
         elif '~$' not in f:
             df = pd.read_excel(f, engine="openpyxl")
             if not df.empty:
                 final.append(df)
                 for _ in range(df.shape[0]):
                     trunc_file_list.append(trunc_file)
-                    rep_name_list.append(trunc_file.replace(f" {file_date_w_spaces}.xlsm", ""))
+                    rep_name_list.append(trunc_file_no_ext)
             else:
                 empty_file_list.append(trunc_file)
-                empty_file_name_list.append(trunc_file.replace(f" {file_date_w_spaces}.xlsm", ""))
+                empty_file_name_list.append(trunc_file_no_ext)
                 # print(f"the file {trunc_file} is empty")
         else:
             continue
