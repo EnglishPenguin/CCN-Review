@@ -168,9 +168,6 @@ def run():
         ""
     )
 
-    # Check if the length of the FSC String is equal to 4, if not it will flag it for review
-    df3['Valid FSC'] = df3.apply(lambda row: "Review" if len(str(row['Insurance'])) != 4 else "", axis=1)
-
     # If a CPT has been removed from the 'OriginalCPT' list, then set the step to 4, otherwise keep it as is
     df3['STEP'] = df3.apply(
         lambda row: 4 if (len(str(row['OriginalCPT'])) > len(str(row['NewCPT']))) and (row['STEP'] != 4) else row['STEP'],

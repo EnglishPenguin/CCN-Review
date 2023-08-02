@@ -34,11 +34,27 @@ def run():
         short_name = short_name.lstrip(f"\\{file_date}\\ ")
         return short_name
 
+    def add_recipient_email(user_list, email_list):
+        """
+        Takes the indicated list of users and checks if the email address exists. If it does, it will add it to the list of email addresses. If no email address exists for that user, it will notify in the script
+        """
+        for user in user_list:
+            # Search for the user in the Outlook address book
+            recipient = namespace.CreateRecipient(user)
+            recipient.Resolve()
+            if recipient.Resolved:
+                # Retrieve the user's email address from the resolved recipient object
+                email_address = recipient.AddressEntry.GetExchangeUser().PrimarySmtpAddress
+                email_list.append(email_address)
+            else:
+                print(f"No email address found for alias or display name: '{user}'")
+
 
     ARS_FILE_PATH = "M:/CPP-Data/AR SUPPORT/SPECIAL PROJECTS/CHARGE CORRECTION BOT/SPREADSHEETS TO SEND TO BOT"
     P1_FILE_PATH = "M:/CPP-Data/Payor 1/Bot CCN"
     P2_FILE_PATH = "M:/CPP-Data/Payer 2/BOTS/Charge Correction Files"
     # B16_FILE_PATH = "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/New vs Established/Formatted Inputs"
+    REP_SUPE_CROSSWALK = "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/References/Report To.xlsx"
 
     # file_paths = [ARS_FILE_PATH, P1_FILE_PATH, P2_FILE_PATH, B16_FILE_PATH]
     file_paths = [ARS_FILE_PATH, P1_FILE_PATH, P2_FILE_PATH]
@@ -80,6 +96,8 @@ def run():
     empty_file_name_list = []
     open_file_name_list = []
     email_list = []
+    user_name_list = []
+    supe_email_list = []
 
     # Creates a LIST containing the file paths for a given file date
     for f in file_paths:
@@ -97,6 +115,7 @@ def run():
         if is_file_in_use(f) and '~$' not in f:
             open_file_list.append(trunc_file)
             open_file_name_list.append(trunc_file_no_ext)
+            user_name_list.append(trunc_file_no_ext)
         elif '~$' not in f:
             df = pd.read_excel(f, engine="openpyxl")
             if not df.empty:
@@ -107,6 +126,7 @@ def run():
             else:
                 empty_file_list.append(trunc_file)
                 empty_file_name_list.append(trunc_file_no_ext)
+                user_name_list.append(trunc_file_no_ext)
                 # print(f"the file {trunc_file} is empty")
         else:
             continue
@@ -182,6 +202,16 @@ def run():
         ]
         )
 
+    # Dataframe for Report To's crosswalk
+    df4 = pd.read_excel(REP_SUPE_CROSSWALK, engine="openpyxl", sheet_name="GECB Usernames and Report Tos")
+
+    # Dataframe to merge with df4 to get supe name for CC list
+    df5 = pd.DataFrame(user_name_list, columns= ["User Name"])
+
+    df5 = pd.merge(df5, df4, on=None, left_on="User Name", right_on="GECB Username", how='left')
+
+    supe_list = df5["Report to"].tolist()
+
     # Writes the finale DataFrame to a new Excel sheet this becomes the Input File
     OUT_PATH_1 = "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/Audits - Files Sent to Bot/"
     OUT_PATH_2 = "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/Inputs/"
@@ -223,32 +253,15 @@ def run():
     # Get the MAPI namespace of the Outlook application
     namespace = outlook.GetNamespace("MAPI")
 
-    for rep in empty_file_name_list:
-        # Search for the user in the Outlook address book
-        recipient = namespace.CreateRecipient(rep)
-        recipient.Resolve()
-        if recipient.Resolved:
-            # Retrieve the user's email address from the resolved recipient object
-            email_address = recipient.AddressEntry.GetExchangeUser().PrimarySmtpAddress
-            email_list.append(email_address)
-        else:
-            print(f"No email address found for alias or display name: '{rep}'")
-
-    for rep in open_file_name_list:
-        # Search for the user in the Outlook address book
-        recipient = namespace.CreateRecipient(rep)
-        recipient.Resolve()
-        if recipient.Resolved:
-            # Retrieve the user's email address from the resolved recipient object
-            email_address = recipient.AddressEntry.GetExchangeUser().PrimarySmtpAddress
-            email_list.append(email_address)
-        else:
-            print(f"No email address found for alias or display name: '{rep}'")
+    add_recipient_email(user_list=empty_file_name_list, email_list=email_list)
+    add_recipient_email(user_list=open_file_name_list, email_list=email_list)
+    add_recipient_email(user_list=supe_list, email_list=supe_email_list)
+    supe_email_list.append('dpashayan@northwell.edu')
 
     # Create a new email message
     mail = outlook.CreateItem(0)
 
-    mail.Subject = f"CCN Input - Open or Blank"
+    mail.Subject = f"CCN Input - Open or Blank | File Date - {file_date_w_spaces}"
 
     html_body = f"""
     <p>Good Afternoon,</p>
@@ -272,9 +285,13 @@ def run():
     """
     mail.HTMLBody = html_body
     email_list = list(set(email_list))
+    supe_email_list = list(set(supe_email_list))
     # Set the To: field of the email message
     for email_address in email_list:
         mail.Recipients.Add(email_address)
+    for email in supe_email_list:
+        recipient = mail.Recipients.Add(email)   
+        recipient.Type = 2
 
     # Display the email message (leave it open for editing)
     mail.Display(False)
