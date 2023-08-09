@@ -86,7 +86,7 @@ def run():
     FSC_GRID = 'M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/References/FSCs that accept electronic CCL.xlsx'
 
     f = f"{FILE_PATH}/Northwell_ChargeCorrection_Input_{fd_mmddyyyy}.xlsx"
-    fsc_df = pd.read_excel(FSC_GRID, sheet_name='Updated 04 19 2023', engine="openpyxl")
+    fsc_df = pd.read_excel(FSC_GRID, sheet_name='Updated 08 04 2023', engine="openpyxl")
     fsc_values = fsc_df['FSC'].tolist()
     df1 = pd.read_excel(f, sheet_name="Sheet1", engine="openpyxl")
     df2 = pd.read_excel(f, sheet_name="Sheet2", engine="openpyxl")
