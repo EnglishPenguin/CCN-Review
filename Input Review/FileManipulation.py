@@ -130,9 +130,10 @@ def run():
     # Check if the FSC in the Insurance column is part of the list of allowed FSCs
     df3['FSC REVIEW'] = np.where(df1['Insurance'].isin(fsc_values), '', 'Review')
 
-    # if Input Invoice Balance != Query Inv Bal; Set Input Invoice Balance to Query Inv Bal value
+    # if Input Invoice Balance != Query Inv Bal & Query Inv Bal is not null; Set Input Invoice Balance to Query Inv Bal value
     df3['InvoiceBalance'] = np.where(
-        (df3['InvoiceBalance'] != df3['INV_BAL,']),
+        (df3['InvoiceBalance'] != df3['INV_BAL,']) &
+        (df3['INV_BAL,'].notnull()),
         df3['INV_BAL,'],
         df3['InvoiceBalance']
     )
@@ -148,7 +149,8 @@ def run():
     # If invoice balance != total charges and STEP = 2; set STEP = 3
     df3['STEP'] = np.where(
         (df3['InvoiceBalance'] != df3['BAR_B_INV.TOT_CHG,']) &
-        (df3['STEP'] == 2),
+        (df3['STEP'] == 2) & 
+        df3['BAR_B_INV.TOT_CHG,'].notnull(),
         3,
         df3['STEP']
     )
