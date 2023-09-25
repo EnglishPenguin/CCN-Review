@@ -53,11 +53,11 @@ def run():
     ARS_FILE_PATH = "M:/CPP-Data/AR SUPPORT/SPECIAL PROJECTS/CHARGE CORRECTION BOT/SPREADSHEETS TO SEND TO BOT"
     P1_FILE_PATH = "M:/CPP-Data/Payor 1/Bot CCN"
     P2_FILE_PATH = "M:/CPP-Data/Payer 2/BOTS/Charge Correction Files"
-    # B16_FILE_PATH = "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/New vs Established/Formatted Inputs"
+    B16_FILE_PATH = "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/New vs Established/Formatted Inputs"
     REP_SUPE_CROSSWALK = "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/References/Report To.xlsx"
 
-    # file_paths = [ARS_FILE_PATH, P1_FILE_PATH, P2_FILE_PATH, B16_FILE_PATH]
-    file_paths = [ARS_FILE_PATH, P1_FILE_PATH, P2_FILE_PATH]
+    file_paths = [ARS_FILE_PATH, P1_FILE_PATH, P2_FILE_PATH, B16_FILE_PATH]
+    # file_paths = [ARS_FILE_PATH, P1_FILE_PATH, P2_FILE_PATH]
 
     today = date.today()
 
@@ -107,6 +107,7 @@ def run():
     # Goes through the File List. Checks if the file is open.
     # If it's not open it attempts to create a list of Pandas DataFrames
     for f in files:
+        # print(f)
         trunc_file = truncate_file_name(f)
         if '.xlsm' in trunc_file:
             trunc_file_no_ext = trunc_file.replace(f" {file_date_w_spaces}.xlsm", "")
@@ -116,7 +117,7 @@ def run():
             open_file_list.append(trunc_file)
             open_file_name_list.append(trunc_file_no_ext)
             user_name_list.append(trunc_file_no_ext)
-        elif '~$' not in f:
+        elif '~$' not in f and '.tmp' not in f:
             df = pd.read_excel(f, engine="openpyxl")
             if not df.empty:
                 final.append(df)
