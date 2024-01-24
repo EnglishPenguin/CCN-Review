@@ -3,6 +3,9 @@ import numpy as np
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 
+# PRIOR TO RUNNING FILEMANIPULATION.PY RUN THIS QUERY IN IDX DENGLISH2_RPA_CCN_VERIFY_PAYCODE
+# USE INVOICES GENERATED FROM FILECOMBINE.PY IN A SAT
+
 
 def run():
     def count_delimiter(delim, ref_column, new_column):

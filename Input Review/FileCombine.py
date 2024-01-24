@@ -29,8 +29,8 @@ def run():
         Takes the full file path and Returns a truncated file name
         :param file_name:
         """
-        # short_name = file_name.replace(f"{P1_FILE_PATH}", "").replace(f"{P2_FILE_PATH}", "").replace(f"{ARS_FILE_PATH}", "").replace(f"{B16_FILE_PATH}", "")
-        short_name = file_name.replace(f"{P1_FILE_PATH}", "").replace(f"{P2_FILE_PATH}", "").replace(f"{ARS_FILE_PATH}", "")
+        short_name = file_name.replace(f"{P1_FILE_PATH}", "").replace(f"{P2_FILE_PATH}", "").replace(f"{ARS_FILE_PATH}", "").replace(f"{B16_FILE_PATH}", "")
+        # short_name = file_name.replace(f"{P1_FILE_PATH}", "").replace(f"{P2_FILE_PATH}", "").replace(f"{ARS_FILE_PATH}", "")
         short_name = short_name.lstrip(f"\\{file_date}\\ ")
         return short_name
 
@@ -49,15 +49,6 @@ def run():
             else:
                 print(f"No email address found for alias or display name: '{user}'")
 
-
-    ARS_FILE_PATH = "M:/CPP-Data/AR SUPPORT/SPECIAL PROJECTS/CHARGE CORRECTION BOT/SPREADSHEETS TO SEND TO BOT"
-    P1_FILE_PATH = "M:/CPP-Data/Payor 1/Bot CCN"
-    P2_FILE_PATH = "M:/CPP-Data/Payer 2/BOTS/Charge Correction Files"
-    B16_FILE_PATH = "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/New vs Established/Formatted Inputs"
-    REP_SUPE_CROSSWALK = "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/References/Report To.xlsx"
-
-    file_paths = [ARS_FILE_PATH, P1_FILE_PATH, P2_FILE_PATH, B16_FILE_PATH]
-    # file_paths = [ARS_FILE_PATH, P1_FILE_PATH, P2_FILE_PATH]
 
     today = date.today()
 
@@ -86,6 +77,15 @@ def run():
     day = file_date.strftime('%d')
     month = file_date.strftime('%m')
     year = file_date.strftime('%Y')
+    
+    ARS_FILE_PATH = "M:/CPP-Data/AR SUPPORT/SPECIAL PROJECTS/CHARGE CORRECTION BOT/SPREADSHEETS TO SEND TO BOT"
+    P1_FILE_PATH = "M:/CPP-Data/Payor 1/Bot CCN"
+    P2_FILE_PATH = "M:/CPP-Data/Payer 2/BOTS/Charge Correction Files"
+    B16_FILE_PATH = f"M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/New vs Established/Formatted Inputs/{month} {year}"
+    REP_SUPE_CROSSWALK = "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/References/Report To.xlsx"
+
+    file_paths = [ARS_FILE_PATH, P1_FILE_PATH, P2_FILE_PATH, B16_FILE_PATH]
+    # file_paths = [ARS_FILE_PATH, P1_FILE_PATH, P2_FILE_PATH]
 
     open_file_list = []
     empty_file_list = []
@@ -117,7 +117,8 @@ def run():
             open_file_list.append(trunc_file)
             open_file_name_list.append(trunc_file_no_ext)
             user_name_list.append(trunc_file_no_ext)
-        elif '~$' not in f and '.tmp' not in f:
+        elif '~$' not in f and '.tmp' not in f and '.db' not in f:
+            # print(f)
             df = pd.read_excel(f, engine="openpyxl")
             if not df.empty:
                 final.append(df)
