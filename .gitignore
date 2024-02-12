@@ -161,6 +161,7 @@ cython_debug/
 #.idea/
 
 # user
+CCN Ad Hoc
 __archive__
 .csv
 *.csv
