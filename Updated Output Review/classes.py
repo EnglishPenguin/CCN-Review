@@ -30,7 +30,10 @@ class Output_Review():
     def get_rep_submissions(self):
         logger.info('adding rep name, super name, dept')
         # logger.debug(f"rep submission invoice {self.df_rep_submission['INVNUM']} sutherland exp invoice {self.df_sutherland_exp['INVNUM']}")
-        self.df_sutherland_exp = pd.merge(self.df_sutherland_exp, self.df_rep_submission[['INVNUM', 'Rep Username', 'Rep Name','Supervisor','Department']],on='INVNUM',how='left')
+        try:
+            self.df_sutherland_exp = pd.merge(self.df_sutherland_exp, self.df_rep_submission[['INVNUM', 'Rep Username', 'Rep Name','Supervisor','Department']],on='INVNUM',how='left')
+        except ValueError:
+            logger.error(f"Error merging DataFrames, likely due to an invald row in Northwell_ChargeCorrection_Output_{self.fd_mmddyyyy}.xls")
 
     def populate_stat_comm_cat_act(self):
         logger.info('populating dp status column')
@@ -151,7 +154,7 @@ class Email_Prep(Output_Review):
     
     def drop_columns_reorder_write_to_file(self):
         logger.info('dropping extra columns')
-        self.df_errors = self.df_errors.drop(columns=self.drop_columns)
+        self.df_errors = self.df_errors.drop(columns=self.drop_columns).sort_values(by='Rep Name')
         self.df_errors = self.df_errors[self.error_columns]
         logger.info('saving errors dataframe to original file')
         with pd.ExcelWriter(self.formatted_file_to_review, mode='a', engine='openpyxl') as writer:
