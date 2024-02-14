@@ -166,6 +166,5 @@ __archive__
 .csv
 *.csv
 *.ipynb
-*.txt
 CCN Dates.ipynb
 Dates.csv
