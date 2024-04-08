@@ -201,7 +201,7 @@ ccn_dict = {
     "output_checker_fp": "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/References/CCN Output Checker.xlsb",
     "comments_template_fp":"M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/References/DP Comments Template.xlsx",
     "file_to_review_fp":"M:/CPP-Data/Sutherland RPA/ChargeCorrection/{yyyy}/{mm_yyyy}/{mmddyyyy}/DP Comments Template.xlsx",
-    "sutherland_output_fp":"M:/CPP-Data/Sutherland RPA/ChargeCorrection/{yyyy}/{mm_yyyy}/{mmddyyyy}/Northwell_ChargeCorrection_Output_{mmddyyyy}.xls",
+    "sutherland_output_fp":"M:/CPP-Data/Sutherland RPA/ChargeCorrection/{yyyy}/{mm_yyyy}/{mmddyyyy}/Northwell_ChargeCorrection_Output_{mmddyyyy}.xlsx",
     "rep_submission_file_fp":"M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/Inputs/{yyyy}/{mm_yyyy} Inputs.xlsx", 
     "destination_fp":"M:/CPP-Data/Sutherland RPA/ChargeCorrection/{yyyy}/{mm_yyyy}/{mmddyyyy}/",
     "columns": [
