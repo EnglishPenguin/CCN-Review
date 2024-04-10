@@ -55,7 +55,7 @@ class Output_Review():
 
     def create_data_frames(self):
         logger.info('creating df from sutherland output')
-        self.df_sutherland_exp = pd.read_excel(self.formatted_sutherland_output, sheet_name="export", engine="xlrd", na_values="")
+        self.df_sutherland_exp = pd.read_excel(self.formatted_sutherland_output, sheet_name="export", na_values="")
         logger.info('creating df of rep submission list')
         self.df_rep_submission = pd.read_excel(self.formatted_rep_submission, sheet_name="Sheet1", engine="openpyxl")
         self.df_rep_submission = self.df_rep_submission.rename(columns={'Invoice': 'INVNUM'})
