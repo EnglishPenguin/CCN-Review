@@ -43,23 +43,26 @@ ______           _
                                  
                                  
                                 
-Step 1 - Rune FileCombine.py
-This will iterate through the each user's CCN Input files for AR Support, Payer 1 and Payer 2 and combine them into one file.
+Step 1 - Run input_main.py with Option 1
+This will iterate through the each user's CCN Input files for AR Support, Payer 1, Payer 2 and Payer 5 and combine them into one file.
 It will be saved at the following location then separated specifically by date. 
 M:\CPP-Data\Sutherland RPA\Northwell Process Automation ETM Files\Monthly Reports\Charge Correction\Audits - Files Sent to Bot
 
-Step 2 - Take the invoice Numbers to Athena IDX and load them into your custom table. Then run the RPA_CCN_VERIFY_PAYCODE query. 
+Step 2 - Remove the duplicate invoices from Sheet1 on this new file created
+
+Step 3 - Take the invoice Numbers to Athena IDX and load them into your custom table. Then run the RPA_CCN_VERIFY_PAYCODE query. 
 If you need to copy the query the full name is: DENGLISH2_RPA_CCN_VERIFY_PAYCODE. Be sure to update the query to use your specific custom table
 
-Step 3 - Open the file and save the output of the query to Sheet2 on the file created in Step1. Save and close the file before proceeding
+Step 4 - Open the file and save the output of the query to Sheet2 on the file created in Step1. Save and close the file before proceeding
 
-Step 4. Rune FileManipulation.py
-This will output the manipulations to a new sheet named 'Sheet3' on the same file
+Step 5. Rune input_main.py with Option 2
+This will output the manipulations to a new sheet named 'Sheet3' on the same file. It will automatically populate Emails for invoices that 
+will be excluded due to established business rules
 
-Step 5. Review 'Sheet3' and the various columns. Any row that needs to be excluded must have the word 'Exclude' in the last column.
+Step 6. Review 'Sheet3' and the various columns. Any row that needs to be excluded must have the word 'Exclude' in the last column.
 Once the Manual review is complete, save the file
 
-Step 6. Run file_to_csv.py
+Step 7. Run input_main.py with Option 3
 This will remove any row that has a value of 'Exclude' in the final column. It will also drop all of the validation columns used to help with the manual review.
 This will save the .csv version of the file for Sutherland to pick up at the M:\CPP-Data\Sutherland RPA\ChargeCorrection file path
 
@@ -82,7 +85,7 @@ ______           _
 \_| \_\___| \_/ |_|\___| \_/\_/  
                                  
 
-Step 1 - Run file_review.py
+Step 1 - Run output_main.py with Option 1
 This will make a copy of the DP Comments Template and CCN Checker files to the appropriate folder for the file date to be reviewed
 This will copy the data from the output file from Sutherland to the DP Comments Template file. 
 It will also assign the DP Status/Comment/Category/Action for the most likely Retrieval Descriptions.
@@ -103,7 +106,7 @@ Perform a VLOOKUP against the CCN Checker for Corrected Invoice Number. If the i
 Step 5 - Create a pivot table of the DP Comments Template 'Sheet1'. Use Department, Supervisor, Representative for the Rows. Use DP Category for the columns.
 For Values use the Count of DP Category. Rename the file
 
-Step 6 - Run EmailPrep.py
+Step 6 - Run output_main.py with Option 2
 This will grab the user names from 'Sheet1', filter out any Successes and any line listed with 'No Action Needed' in the action column and collect their email addresses. 
 It will create a new 'Sheet3' on the file with this information
 It will create an email to the Representatives that need to fix their errors.
