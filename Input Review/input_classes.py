@@ -378,6 +378,7 @@ class Input_Review(Date_Functions):
         self.prep_query_df()
         self.prep_review_df()
         self.fsc_review()
+        self.review_cpt()
         self.update_inv_bal()
         self.update_step()
         self.exclude_multi_paycode()
@@ -391,10 +392,10 @@ class Input_Review(Date_Functions):
         self.review_dx_pointers()
         self.evaluate_dx_pointers()
         self.invalid_bie()
-        self.review_FSC()
-        self.value_exclude_col()
         self.add_rep_supe()
+        self.value_exclude_col()
         self.create_exclusion_df()
+        self.order_col()
         self.write_to_excel()
 
     def calc_one_year_ago(self):
@@ -438,9 +439,12 @@ class Input_Review(Date_Functions):
 
     def prep_query_df(self):
         logger.info("Preparing Query DataFrame")
+        self.query_cpts = self.query_df.groupby('Invoice')['PROC__2,'].apply(lambda x: list(map(str, x.unique()))).to_dict()
         self.query_df.drop(columns=self.query_drop_col)
         self.pay_code_counts = self.query_df.groupby('Invoice')['BAR_B_TXN_LI_PAY.PAY_CODE__2'].nunique().reset_index(name='unique_paycode_count')
         self.query_df = self.query_df.merge(self.pay_code_counts, on='Invoice', how='left')
+        # iterate through self.query_cpts and create a new column 'QueryCPT' that contains the unique CPTs for each invoice
+        self.query_df['QueryCPT'] = self.query_df['Invoice'].map(self.query_cpts)
         logger.debug(f'Length of Query DataFrame: {len(self.query_df)}')
 
     def prep_review_df(self):
@@ -666,6 +670,46 @@ class Input_Review(Date_Functions):
             ''
         )
 
+    def review_cpt(self):
+        logger.info("Reviewing CPTs")
+        # 99205|19038R|38505|10005 or |93770|94761|93040|77003| or J0491||||
+        # create column 'QueryCPT Count' that counts the number of CPTs in the 'QueryCPT' column
+        self.review_df['QueryCPT Count'] = self.review_df['QueryCPT'].apply(lambda x: len(x))
+        # if self.review_df['OriginalCPT'] contains "|" then split by "|" and create a list of the values, otherwise create a list with the value of 'OriginalCPT'
+        self.review_df['OriginalCPT List'] = self.review_df['OriginalCPT'].apply(lambda x: x.split('|') if '|' in str(x) else [str(x)])
+        # create column Original CPT List count that counts the number of CPTs in the 'OriginalCPT List' column
+        self.review_df['OriginalCPT List Count'] = self.review_df['OriginalCPT List'].apply(lambda x: len(x))
+        # if 'QueryCPT Count' is not equal to 'OriginalCPT List Count' then create a new column 'Review CPT' and set the value to 'Review'
+        self.review_df['Review CPT'] = np.where(
+            self.review_df['QueryCPT Count'] > self.review_df['OriginalCPT List Count'],
+            'Review',
+            ''
+        )
+        # If there are no values from 'OriginalCPT List' in 'QueryCPT' then set 'Review CPT' to 'Review', ignore "" values in 'OriginalCPT List'
+        self.review_df['Review CPT'] = np.where(
+            self.review_df['OriginalCPT List'].apply(lambda x: any(val in x for val in self.review_df['QueryCPT']) if '' not in x else False),
+            'Review',
+            self.review_df['Review CPT']
+        )
+        # Function to iterate through the 'OriginalCPT List' and 'QueryCPT' columns and compare the values. If there is a difference, return True
+        def iterate_cpt(OriginalCPT_List, QueryCPT):
+            for i in range(len(OriginalCPT_List)):
+                original_cpt = OriginalCPT_List[i]
+                query_cpt = QueryCPT[i]
+    
+                # Compare non-empty entries in OriginalCPT List to QueryCPT
+                if original_cpt and original_cpt != query_cpt:
+                    return True
+                else:
+                    return False
+        # If the function iterate_cpt returns True, set the value of 'Review CPT' to 'Review'
+        self.review_df['Review CPT'] = np.where(
+            self.review_df.apply(lambda row: iterate_cpt(row['OriginalCPT List'], row['QueryCPT']), axis=1),
+            'Review',
+            self.review_df['Review CPT']
+)
+        
+
     def value_exclude_col(self):
         logger.info("Valuing Exclude Column")
         self.review_df['Exclude'] = np.where(
@@ -676,6 +720,73 @@ class Input_Review(Date_Functions):
             'Exclude',
             ''
         )
+        for index, row in self.review_df.iterrows():
+            if 'HCOB16' in row['Rep Name']:
+                row['Exclude'] = ''
+            elif 'MBPROJECT' in row['Rep Name']:
+                row['Exclude'] = ''
+            else:
+                continue
+
+    def order_col(self):
+        logger.info("Ordering Columns")
+        col_order = [
+            "Invoice",
+            "ClaimReferenceNumber",
+            "InvoiceDOS",
+            "OriginalDOS",
+            "NewDOS",
+            "Charge",
+            "TotalChg",
+            "InvoiceBalance",
+            "ProviderName",
+            "NewProvider",
+            "BillingArea",
+            "NewBillingArea",
+            "OriginalLocation",
+            "NewLocation",
+            "Insurance",
+            "TXN",
+            "OriginalCPT",
+            "NewCPT",
+            "OriginalDX",
+            "NewDX",
+            "DxPointers",
+            "OriginalModifier",
+            "NewModifier",
+            "ActionAddRemoveReplace",
+            "Reason",
+            "STEP",
+            "Data",
+            "Retrieval_Status",
+            "Retrieval_Description",
+            "BAR_B_INV.SER_DT,",
+            "BAR_B_INV.TOT_CHG,",
+            "INV_BAL,",
+            "BAR_B_INV.ORIG_FSC__5,",
+            "FSC REVIEW",
+            "QueryCPT",
+            "QueryCPT Count",
+            "OriginalCPT List",
+            "OriginalCPT List Count",
+            "Review CPT",
+            "BAR_B_INV.CORR_INV_NUM",
+            "unique_paycode_count",
+            "Exclude Multi Paycode",
+            "Exclude DOS > 1 Year",
+            "Invalid BIE",
+            "Modifier Review",
+            "DxPointer Review",
+            "Original DX Count",
+            "New DX Count",
+            "Max Pointer",
+            "Exclude",
+            "Rep Name",
+            "Report to",
+        ]
+        # set the column order of self.review_df to col_order
+        self.review_df = self.review_df[col_order]
+
 
     def add_rep_supe(self):
         logger.info("Adding Rep and Supervisor Columns")
@@ -693,6 +804,10 @@ class Input_Review(Date_Functions):
         # iterate through each invoice in the exclusion dataframe, review the columns 'Exclude Multi Paycode', 'Exclude DOS > 1 Year', 'Corrected Invoice Number'. If there is a value in any of these columns, create an email using the create_email method
         for index, row in self.excl_df.iterrows():
             if 'HCOB16' in row['Rep Name']:
+                # row['Exclude'] = ''
+                continue
+            elif 'MBPROJECT' in row['Rep Name']:
+                # row['Exclude'] = ''
                 continue
             else:
                 if row['Exclude Multi Paycode'] == 'Exclude':
@@ -797,35 +912,6 @@ class Input_Review(Date_Functions):
                     )
     
     def write_to_excel(self):
-        self.review_df = self.review_df.drop(
-            [
-                "BAR_B_TXN.SER_DT,",
-                "PROV__1,",
-                "LOC__2,",
-                "BAR_B_INV.DX_ONE__3,",
-                "DX_TWO__3,",
-                "DX_THREE__3,",
-                "DX_FOUR__3,",
-                "DX_FIVE__3,",
-                "DX_SIX__3,",
-                "DX_SEVEN__3,",
-                "DX_EIGHT__3,",
-                "DX_NINE__3,",
-                "DX_TEN__3,",
-                "BAR_B_INV.DX_ELEVEN__3,",
-                "BAR_B_INV.DX_TWELVE__3,",
-                "TXN_NUM,",
-                "PROC__2,",
-                "MOD,",
-                "BAR_B_TXN.DX_NUM,",
-                "BAR_B_INV.CHG_CORR_FLAG,",
-                "BAR_B_TXN_LI_PAY.PAY_CODE__2",
-                "DxPointers Null",
-                "DxPointers String",
-
-            ], 
-            axis=1
-        )
         logger.info("Writing to Excel")
         with pd.ExcelWriter(self.file, mode='a', engine='openpyxl', if_sheet_exists='replace') as writer:
             # Write the DataFrame to a new sheet
@@ -843,25 +929,29 @@ class File_To_CSV:
         self.export_file = f"{FILE_PATH}/Northwell_ChargeCorrection_Input_{self.fd_no_spaces}.xlsx"
         self.export_df = pd.read_excel(self.export_file, sheet_name="Sheet3", engine='openpyxl')
         self.drop_col = [
+            "BAR_B_INV.SER_DT,",
             "BAR_B_INV.TOT_CHG,",
             "INV_BAL,",
             "BAR_B_INV.ORIG_FSC__5,",
-            "BAR_B_INV.CORR_INV_NUM",
             "FSC REVIEW",
+            "QueryCPT",
+            "QueryCPT Count",
+            "OriginalCPT List",
+            "OriginalCPT List Count",
+            "Review CPT",
+            "BAR_B_INV.CORR_INV_NUM",
+            "unique_paycode_count",
             "Exclude Multi Paycode",
             "Exclude DOS > 1 Year",
+            "Invalid BIE",
             "Modifier Review",
+            "DxPointer Review",
             "Original DX Count",
             "New DX Count",
             "Max Pointer",
-            "DxPointer Review",
-            "Invalid BIE",
-            "Review FSC",
             "Exclude",
             "Rep Name",
             "Report to",
-            "unique_paycode_count",
-            "BAR_B_INV.SER_DT,",
         ]
         self.file_csv = f"Northwell_ChargeCorrection_Input_{self.fd_no_spaces}.csv"
 
