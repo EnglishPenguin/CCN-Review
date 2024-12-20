@@ -89,9 +89,9 @@ ccn_dict = {
         "Completed - ":{
             "DP Status":"Success","DP Comments":" ","DP Category":"Success","Action":" ",},
         "Encounter Already Worked - ":{
-            "DP Status":"Error","DP Comments":"P00 - Already Corrected","DP Category":"Timing Issue","Action":"No Action Needed",},
+            "DP Status":"P00 Error","DP Comments":"P00 - Already Corrected","DP Category":"Timing Issue","Action":"Rep to review new invoice",},
         "Encounter Already Worked - ":{
-            "DP Status":"Error","DP Comments":"P00 - Already Corrected","DP Category":"Timing Issue","Action":"No Action Needed",},
+            "DP Status":"P00 Error","DP Comments":"P00 - Already Corrected","DP Category":"Timing Issue","Action":"Rep to review new invoice",},
         "End-to-End Success - ":{
             "DP Status":"Success","DP Comments":"","DP Category":"Success","Action":"",},
         "New/Unexpected Screen Element - Action image":{
@@ -195,11 +195,11 @@ ccn_dict = {
         "CorrectionOfCPTDXModifiers throwing error  -  New/Unexpected Screen Element":{
             "DP Status":"Error","DP Comments":"","DP Category":"","Action":""},
         "Unspecified Technical Failure - Keyboard shortcuts":{
-            "DP Status":"Error","DP Comments":"","DP Category":"","Action":""
-        },
+            "DP Status":"Error","DP Comments":"","DP Category":"","Action":""},
         "Known Pop Up - Deceased":{
-            "DP Status":"Error","DP Comments":"Pop Up - Deceased Indicator","DP Category":"Bot Error","Action":"Rep to complete manually"
-        }
+            "DP Status":"Error","DP Comments":"Pop Up - Deceased Indicator","DP Category":"Bot Error","Action":"Rep to complete manually"},
+        "Validation Error - Input CPT Mismatch":{
+            "DP Status":"Error","DP Comments":"Input Error","DP Category":"Rep Error","Action":""}
         },
     "output_checker_fp": "M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/References/CCN Output Checker.xlsb",
     "comments_template_fp":"M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Monthly Reports/Charge Correction/References/DP Comments Template.xlsx",
