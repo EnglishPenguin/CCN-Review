@@ -24,6 +24,7 @@ FSC_GRID = 'M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Mo
 class Date_Functions:
     def __init__(self) -> None:
         self.today = date.today()
+        # self.today = date(2024, 12, 24)
 
     def run(self):
         self.get_file_date()
@@ -156,7 +157,8 @@ class File_Combine(Date_Functions):
         'BAR_B_TXN.DX_NUM,',
         'BAR_B_INV.CHG_CORR_FLAG,',
         'BAR_B_INV.CORR_INV_NUM',
-        'BAR_B_TXN_LI_PAY.PAY_CODE__2'
+        'BAR_B_TXN_LI_PAY.PAY_CODE__2',
+        'BAR_B_TXN.U_CPTCODE_LIST',
         ]
         self.input_ref_columns = [
             "Invoice", 
@@ -432,7 +434,10 @@ class Input_Review(Date_Functions):
                 recipient.Resolve()
                 if recipient.Resolved:
                     email_address = recipient.AddressEntry.GetExchangeUser().PrimarySmtpAddress
-            recipient = mail.Recipients.Add(email_address)
+            try:
+                recipient = mail.Recipients.Add(email_address)
+            except UnboundLocalError as e:
+                continue
             recipient.Type = 2
         mail.HTMLBody = self.html_body
         mail.display(False)
@@ -443,8 +448,6 @@ class Input_Review(Date_Functions):
         self.query_df.drop(columns=self.query_drop_col)
         self.pay_code_counts = self.query_df.groupby('Invoice')['BAR_B_TXN_LI_PAY.PAY_CODE__2'].nunique().reset_index(name='unique_paycode_count')
         self.query_df = self.query_df.merge(self.pay_code_counts, on='Invoice', how='left')
-        # iterate through self.query_cpts and create a new column 'QueryCPT' that contains the unique CPTs for each invoice
-        self.query_df['QueryCPT'] = self.query_df['Invoice'].map(self.query_cpts)
         logger.debug(f'Length of Query DataFrame: {len(self.query_df)}')
 
     def prep_review_df(self):
@@ -672,42 +675,49 @@ class Input_Review(Date_Functions):
 
     def review_cpt(self):
         logger.info("Reviewing CPTs")
-        # 99205|19038R|38505|10005 or |93770|94761|93040|77003| or J0491||||
+        # 99205|19038R|38505|10005 or |93770|94761|93040|77003| or J0491|||| or 99292
+        # columns to use 'OriginalCPT List', 'OriginalCPT List Count', 'BAR_B_TXN.U_CPTCODE_LIST', 'QueryCPT', 'QueryCPT Count', 'Review CPT'
+
+        self.review_df.rename(columns={'BAR_B_TXN.U_CPTCODE_LIST': 'QueryCPT'}, inplace=True)
+        self.review_df['OriginalCPT'] = self.review_df['OriginalCPT'].apply(lambda x:str(x))
+        self.review_df['QueryCPT']= self.review_df['QueryCPT'].apply(lambda x:str(x))
+        
+        self.review_df['OriginalCPT List'] = self.review_df['OriginalCPT'].apply(lambda x: x.split('|') if '|' in x else [x])
+        self.review_df['QueryCPT'] = self.review_df['QueryCPT'].apply(lambda x: x.split('|') if '|' in x else [x])
+
         # create column 'QueryCPT Count' that counts the number of CPTs in the 'QueryCPT' column
-        self.review_df['QueryCPT Count'] = self.review_df['QueryCPT'].apply(lambda x: len(x))
-        # if self.review_df['OriginalCPT'] contains "|" then split by "|" and create a list of the values, otherwise create a list with the value of 'OriginalCPT'
-        self.review_df['OriginalCPT List'] = self.review_df['OriginalCPT'].apply(lambda x: x.split('|') if '|' in str(x) else [str(x)])
-        # create column Original CPT List count that counts the number of CPTs in the 'OriginalCPT List' column
-        self.review_df['OriginalCPT List Count'] = self.review_df['OriginalCPT List'].apply(lambda x: len(x))
+        self.review_df['QueryCPT Count'] = self.review_df['QueryCPT'].apply(lambda x: len(x) if isinstance(x, list) else 1)
+        self.review_df['OriginalCPT List Count'] = self.review_df['OriginalCPT List'].apply(lambda x: len(x) if isinstance(x, list) else 1)
+
         # if 'QueryCPT Count' is not equal to 'OriginalCPT List Count' then create a new column 'Review CPT' and set the value to 'Review'
-        self.review_df['Review CPT'] = np.where(
-            self.review_df['QueryCPT Count'] > self.review_df['OriginalCPT List Count'],
-            'Review',
-            ''
-        )
-        # If there are no values from 'OriginalCPT List' in 'QueryCPT' then set 'Review CPT' to 'Review', ignore "" values in 'OriginalCPT List'
-        self.review_df['Review CPT'] = np.where(
-            self.review_df['OriginalCPT List'].apply(lambda x: any(val in x for val in self.review_df['QueryCPT']) if '' not in x else False),
-            'Review',
-            self.review_df['Review CPT']
-        )
-        # Function to iterate through the 'OriginalCPT List' and 'QueryCPT' columns and compare the values. If there is a difference, return True
-        def iterate_cpt(OriginalCPT_List, QueryCPT):
-            for i in range(len(OriginalCPT_List)):
-                original_cpt = OriginalCPT_List[i]
-                query_cpt = QueryCPT[i]
-    
-                # Compare non-empty entries in OriginalCPT List to QueryCPT
-                if original_cpt and original_cpt != query_cpt:
-                    return True
+        self.review_df['Review CPT'] = ''
+
+        for index, row in self.review_df.iterrows():
+            if row['QueryCPT Count'] != row['OriginalCPT List Count']:
+                self.review_df.at[index, 'Review CPT'] = 'Count Mismatch'
+            else:
+                continue
+
+        for index, row in self.review_df.iterrows():
+            query_list = row['QueryCPT']
+            orig_list = row['OriginalCPT List']
+            try:
+                for _ in range(0,len(query_list)-1):
+                    if orig_list[_] != query_list[_] and orig_list[_] != '':
+                        self.review_df.at[index, 'Review CPT'] = 'Comparison Error'
+                    else:
+                        continue
+                    if len(orig_list[_]) != len(query_list[_]) and orig_list[_] != '':
+                        self.review_df.at[index, 'Review CPT'] = 'Comparison Error'
+                    else:
+                        continue
                 else:
-                    return False
-        # If the function iterate_cpt returns True, set the value of 'Review CPT' to 'Review'
-        self.review_df['Review CPT'] = np.where(
-            self.review_df.apply(lambda row: iterate_cpt(row['OriginalCPT List'], row['QueryCPT']), axis=1),
-            'Review',
-            self.review_df['Review CPT']
-)
+                    continue
+            except IndexError as e:
+                logger.info(f"IndexError: {e}")
+                self.review_df.at[index, 'Review CPT'] = 'Index Error'
+                continue
+
         
 
     def value_exclude_col(self):
@@ -721,10 +731,14 @@ class Input_Review(Date_Functions):
             ''
         )
         for index, row in self.review_df.iterrows():
-            if 'HCOB16' in row['Rep Name']:
-                row['Exclude'] = ''
-            elif 'MBPROJECT' in row['Rep Name']:
-                row['Exclude'] = ''
+            if row['Rep Name'] == 'HCOB16Electronic':
+                self.review_df.at[index, 'Exclude'] = ''
+            elif row['Rep Name'] == 'HCOB16Paper':
+                self.review_df.at[index, 'Exclude'] = ''
+            elif row['Rep Name'] == 'MBPROJECT':
+                self.review_df.at[index, 'Exclude'] = ''
+            elif row['Rep Name'] == 'MBProject':
+                self.review_df.at[index, 'Exclude'] = ''
             else:
                 continue
 
@@ -804,10 +818,10 @@ class Input_Review(Date_Functions):
         # iterate through each invoice in the exclusion dataframe, review the columns 'Exclude Multi Paycode', 'Exclude DOS > 1 Year', 'Corrected Invoice Number'. If there is a value in any of these columns, create an email using the create_email method
         for index, row in self.excl_df.iterrows():
             if 'HCOB16' in row['Rep Name']:
-                # row['Exclude'] = ''
                 continue
             elif 'MBPROJECT' in row['Rep Name']:
-                # row['Exclude'] = ''
+                continue
+            elif 'MBProject' in row['Rep Name']:
                 continue
             else:
                 if row['Exclude Multi Paycode'] == 'Exclude':
