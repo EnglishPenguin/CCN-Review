@@ -685,38 +685,21 @@ class Input_Review(Date_Functions):
         self.review_df['OriginalCPT List'] = self.review_df['OriginalCPT'].apply(lambda x: x.split('|') if '|' in x else [x])
         self.review_df['QueryCPT'] = self.review_df['QueryCPT'].apply(lambda x: x.split('|') if '|' in x else [x])
 
-        # create column 'QueryCPT Count' that counts the number of CPTs in the 'QueryCPT' column
-        self.review_df['QueryCPT Count'] = self.review_df['QueryCPT'].apply(lambda x: len(x) if isinstance(x, list) else 1)
-        self.review_df['OriginalCPT List Count'] = self.review_df['OriginalCPT List'].apply(lambda x: len(x) if isinstance(x, list) else 1)
-
-        # if 'QueryCPT Count' is not equal to 'OriginalCPT List Count' then create a new column 'Review CPT' and set the value to 'Review'
         self.review_df['Review CPT'] = ''
-
-        for index, row in self.review_df.iterrows():
-            if row['QueryCPT Count'] != row['OriginalCPT List Count']:
-                self.review_df.at[index, 'Review CPT'] = 'Count Mismatch'
-            else:
-                continue
 
         for index, row in self.review_df.iterrows():
             query_list = row['QueryCPT']
             orig_list = row['OriginalCPT List']
-            try:
-                for _ in range(0,len(query_list)-1):
-                    if orig_list[_] != query_list[_] and orig_list[_] != '':
-                        self.review_df.at[index, 'Review CPT'] = 'Comparison Error'
-                    else:
-                        continue
-                    if len(orig_list[_]) != len(query_list[_]) and orig_list[_] != '':
-                        self.review_df.at[index, 'Review CPT'] = 'Comparison Error'
-                    else:
-                        continue
-                else:
-                    continue
-            except IndexError as e:
-                logger.info(f"IndexError: {e}")
-                self.review_df.at[index, 'Review CPT'] = 'Index Error'
+
+            if len(query_list) != len(orig_list):
+                self.review_df.at[index, 'Review CPT'] = 'Count Mismatch'
                 continue
+
+            for i, o in enumerate(orig_list):
+                q = query_list[i]
+                if o and o != q:
+                    self.review_df.at[index, 'Review CPT'] = 'Comparison Error'
+                    break
 
         
 
@@ -780,9 +763,7 @@ class Input_Review(Date_Functions):
             "BAR_B_INV.ORIG_FSC__5,",
             "FSC REVIEW",
             "QueryCPT",
-            "QueryCPT Count",
             "OriginalCPT List",
-            "OriginalCPT List Count",
             "Review CPT",
             "BAR_B_INV.CORR_INV_NUM",
             "unique_paycode_count",
@@ -949,9 +930,7 @@ class File_To_CSV:
             "BAR_B_INV.ORIG_FSC__5,",
             "FSC REVIEW",
             "QueryCPT",
-            "QueryCPT Count",
             "OriginalCPT List",
-            "OriginalCPT List Count",
             "Review CPT",
             "BAR_B_INV.CORR_INV_NUM",
             "unique_paycode_count",
