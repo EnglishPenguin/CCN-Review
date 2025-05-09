@@ -6,6 +6,12 @@ from logger_setup import logger
 from tkinter import simpledialog as sd
 from tkinter import messagebox as mb
 import mappings
+import pathlib
+from pathlib import Path
+from glob import glob
+import os
+import re
+
 
 class Output_Review():
     def __init__(self):     
@@ -18,6 +24,8 @@ class Output_Review():
         self.file_to_review_fp = mappings.ccn_dict["file_to_review_fp"]
         self.sutherland_output_fp = mappings.ccn_dict["sutherland_output_fp"]
         self.rep_submission_fp = mappings.ccn_dict["rep_submission_file_fp"] 
+        self.cleanup_dir = Path('//NT2KWB972SRV03/SHAREDATA/CPP-Data/Sutherland RPA/ChargeCorrection')
+        
 
     def prep_and_export_file(self):
         logger.info('isolating needed columns')
@@ -208,3 +216,25 @@ class Email_Prep(Output_Review):
             recipient.Type = 2
         
         mail.Display(False)
+
+    def cleanup_directory(self):
+        
+        files = glob(str(self.cleanup_dir / '*.csv'))
+        file_dates = []
+        for file in files:
+            # get the filename
+            filename = os.path.basename(file)
+            # extract the date from the filename it is in MMDDYYYY format
+            date = re.search(r'\d{8}', filename).group()
+            # convert the date to a datetime object
+            date = dt.datetime.strptime(date, '%m%d%Y')
+            file_dates.append(date)
+
+        # get todays date
+        today = dt.datetime.now()
+        # if date in the file is more than 5 days old, delete the file date
+        for file, date in zip(files, file_dates):
+            if (today - date).days > 5:
+                os.remove(file)
+            else:
+                continue        
