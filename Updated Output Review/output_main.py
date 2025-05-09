@@ -12,10 +12,16 @@ if __name__ == '__main__':
             ccn_review.convert_dates_to_strings()
             ccn_review.ask_if_correct_date()
             ccn_review.move_templates_to_detination()
-            ccn_review.create_data_frames()
-            ccn_review.populate_stat_comm_cat_act()
-            ccn_review.get_rep_submissions()
-            ccn_review.prep_and_export_file()
+            try:
+                ccn_review.create_data_frames()
+            except FileNotFoundError as e:
+                logger.error(e)
+                continue
+
+            else:
+                ccn_review.populate_stat_comm_cat_act()
+                ccn_review.get_rep_submissions()
+                ccn_review.prep_and_export_file()
         elif output_process == 2:
             email_prep = Email_Prep()
             email_prep.get_file_date()
@@ -26,6 +32,7 @@ if __name__ == '__main__':
             email_prep.drop_columns_reorder_write_to_file()
             email_prep.prep_email_list()
             email_prep.create_email()
+            email_prep.cleanup_directory()
         elif output_process == None:
             mb.showinfo("Closing", "Thank you, exiting program")
             logger.info("user ending program")
