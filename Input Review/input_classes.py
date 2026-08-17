@@ -24,7 +24,7 @@ FSC_GRID = 'M:/CPP-Data/Sutherland RPA/Northwell Process Automation ETM Files/Mo
 class Date_Functions:
     def __init__(self) -> None:
         self.today = date.today() # File date is always dated t+1 or t+3 in case of friday
-        # self.today = date(2025, 12, 28) # set for specific date. ensure it is 1 day before the desired file date
+        # self.today = date(2026, 5, 26) # set for specific date. ensure it is 1 day before the desired file date
 
     def run(self):
         self.get_file_date()
@@ -50,6 +50,8 @@ class Date_Functions:
                 if self.file_date.weekday() < 5:
                     break
         logger.info(f"file date is set to: {self.file_date}")
+        # if need to set the file date to a specific day, uncomment the line below and comment out the above logic
+        # self.file_date = self.today
         return self.file_date
         
     def get_mmddyyyy(self):
@@ -231,25 +233,29 @@ class File_Combine(Date_Functions):
         logger.info(f"Checking if files exist and are not open/empty")
         for f in self.files:
             truncated_f = self.truncate_file_name(f)
-            if '.xlsm' in truncated_f:
-                trunc_f_no_ext = truncated_f.replace(f' {self.fd_spaces}.xlsm', '')
-            else:
-                trunc_f_no_ext = truncated_f.replace(f' {self.fd_spaces}.xlsx', '')
-            if self.check_files(f) and '~$' not in f:
-                self.open_file_list.append(truncated_f)
-                self.open_file_name_list.append(trunc_f_no_ext)
-                self.user_name_list.append(trunc_f_no_ext)
-            elif '~$' not in f and '.tmp' not in f and '.db' not in f:
-                df = pd.read_excel(f, engine='openpyxl')
-                if not df.empty:
-                    self.df_list.append(df)
-                    for _ in range(df.shape[0]):
-                        self.trunc_file_list.append(truncated_f)
-                        self.rep_name_list.append(trunc_f_no_ext)
+            try:
+                if '.xlsm' in truncated_f:
+                    trunc_f_no_ext = truncated_f.replace(f' {self.fd_spaces}.xlsm', '')
                 else:
-                    self.empty_file_list.append(truncated_f)
-                    self.empty_f_user_list.append(trunc_f_no_ext)
+                    trunc_f_no_ext = truncated_f.replace(f' {self.fd_spaces}.xlsx', '')
+                if self.check_files(f) and '~$' not in f:
+                    self.open_file_list.append(truncated_f)
+                    self.open_file_name_list.append(trunc_f_no_ext)
                     self.user_name_list.append(trunc_f_no_ext)
+                elif '~$' not in f and '.tmp' not in f and '.db' not in f:
+                    df = pd.read_excel(f, engine='openpyxl')
+                    if not df.empty:
+                        self.df_list.append(df)
+                        for _ in range(df.shape[0]):
+                            self.trunc_file_list.append(truncated_f)
+                            self.rep_name_list.append(trunc_f_no_ext)
+                    else:
+                        self.empty_file_list.append(truncated_f)
+                        self.empty_f_user_list.append(trunc_f_no_ext)
+                        self.user_name_list.append(trunc_f_no_ext)
+            except Exception as e:
+                logger.error(f"Error processing file {f}: {e}")
+                continue
     
     def create_df(self, df= None, col= None, id= str):
         logger.info(f"Creating DataFrame for {id}")
@@ -344,7 +350,7 @@ class Input_Review(Date_Functions):
         self.month = fd_mm
         self.year = fd_yyyy
         self.file = f"{FILE_PATH}/Northwell_ChargeCorrection_Input_{self.fd_no_spaces}.xlsx"
-        self.fsc_grid_df = pd.read_excel(FSC_GRID, engine='openpyxl', sheet_name='Updated 08 04 2023')
+        self.fsc_grid_df = pd.read_excel(FSC_GRID, engine='openpyxl', sheet_name=0)
         self.fsc_values = self.fsc_grid_df['FSC'].tolist()
         self.initial_sub_df = pd.read_excel(self.file, engine='openpyxl', sheet_name='Sheet1')
         self.query_df = pd.read_excel(self.file, engine='openpyxl', sheet_name='Sheet2')
@@ -383,6 +389,7 @@ class Input_Review(Date_Functions):
         self.review_cpt()
         self.update_inv_bal()
         self.update_step()
+        self.review_df['Exclude Type'] = ''
         self.exclude_multi_paycode()
         self.exclude_dos_over_one_year()
         self.review_mod()
@@ -525,7 +532,6 @@ class Input_Review(Date_Functions):
 
     def exclude_multi_paycode(self):
         logger.info("Excluding Multi Paycode Invoices")
-        self.review_df['Exclude Type'] = ''
         # 'Exclude Multi Paycode'
         self.review_df['Exclude Type'] = np.where(
             (self.review_df['unique_paycode_count'] > 1) &
@@ -612,7 +618,7 @@ class Input_Review(Date_Functions):
         self.is_orig_blank('NewDX', 'OriginalDX')
         logger.info("Blanking and Equaling Fields for DOS")
         self.is_orig_eq_new('NewDOS','OriginalDOS')
-        self.clear_date_field()
+        # self.clear_date_field()
         
     def count_delim(self, delim, ref_col, new_col):
         logger.info(f"Counting delimiter {delim} in column {ref_col} and adding to new column {new_col}")
@@ -681,7 +687,7 @@ class Input_Review(Date_Functions):
             (self.review_df['OriginalCPT'].isnull() == False) &
             (self.review_df['NewCPT'].isnull() == True),
             'Invalid BIE Exclude',
-            ''
+            self.review_df['Exclude Type']
         )
 
     def review_cpt(self):
@@ -814,7 +820,13 @@ class Input_Review(Date_Functions):
 
     def create_exclusion_df(self):
         logger.info("Creating dataframe of exclusions")
-        self.excl_df = self.review_df[self.review_df['Exclude'] == 'Exclude']
+        # if ['Exclude Type'] is not blank, set ['Exclude'] to 'Exclude'
+        self.review_df['Exclude'] = np.where(self.review_df['Exclude Type'] != '', 'Exclude', '')
+        try:
+            self.excl_df = self.review_df[self.review_df['Exclude'] == 'Exclude']
+        except KeyError:
+            self.review_df['Exclude'] = ''
+            self.excl_df = self.review_df[self.review_df['Exclude'] == 'Exclude']
         # iterate through each invoice in the exclusion dataframe, review the columns 'Exclude Multi Paycode', 'Exclude DOS > 1 Year', 'Corrected Invoice Number'. If there is a value in any of these columns, create an email using the create_email method
         for index, row in self.excl_df.iterrows():
             if 'HCOB16' in row['Rep Name']:
@@ -899,7 +911,7 @@ class Input_Review(Date_Functions):
                         rep=[row['Rep Name']], 
                         supe=[row['Report to']]
                     )
-                elif row['Exclude Type'] != 'Inv Already Corrected Exclude':
+                elif row['Exclude Type'] == 'Inv Already Corrected Exclude':
                     logger.debug('Inv already CCN')
                     self.create_email(
                         body=f"""
@@ -946,7 +958,6 @@ class File_To_CSV:
             "BAR_B_INV.SER_DT,",
             "BAR_B_INV.TOT_CHG,",
             "INV_BAL,",
-            "BAR_B_INV.ORIG_FSC__5,",
             "FSC Review",
             "QueryCPT",
             "OriginalCPT List",
